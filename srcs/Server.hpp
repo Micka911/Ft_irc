@@ -1,67 +1,91 @@
 #include <unistd.h>
 #include <string.h>
+#include <cstdlib>
 
 #include <vector>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <poll.h>
 
-#include "Client.hpp"
+#define white "\e[0;37m"
+#define red "\e[1;31m"
+#define green "\e[1;32m"
+#define yellow "\e[1;33m"
+
+#include "Channel.hpp"
 
 class Server {
 
 	public :
 
-		Server(){ set_list_command(); };
+		Server(){};
 		~Server(){};
 
 		// Getters //
-		int				get_socket_fd(){ return this->_socket_fd; };
-		int				get_port(){ return this->_port; };
-		std::string		get_password(){ return this->_password; };
+
+		bool	get_signal() const{ return this->_signal; }
+		int		get_socket_fd() const{ return this->_socket_fd; }
+		int		get_port() const{ return this->_port; }
+		std::string	get_password() const{ return this->_password; }
+		Client		*get_client_by_fd( int fd );
+		Client		*get_client_by_username( std::string username );
+		Channel		*get_channel( std::string name );
 
 		// Setters //
-		void			set_socket_fd( int fd ){ this->_socket_fd = fd; };
-		void			set_port( int port ){ this->_port = port; };
-		void			set_password( std::string password ){ this->_password = password; };
 
-		// Fonctions //
-		void			server_init( int port, std::string password );
-		void			socket_creation();
-		void			new_client_request();
-		void			data_receiver( int fd );
+		void	set_socket_fd( int fd ){ this->_socket_fd = fd; }
+		void	set_port( int port ){ this->_port = port; }
+		void	set_password( std::string password ){ this->_password = password; }
 
-		void			client_clear( int fd );
-		void			close_socket_fd();
-		static void		signal_handler( int signum );
+		// Functions //
+
+		static void	signal_handler( int signum );
+
+		void	send_message( int fd, std::string message ){ send(fd, message.c_str(), message.length(), 0); }
+		void	server_init( int port, std::string password );
+		void	socket_creation();
+		void	new_client_request();
+		void	data_receiver( int fd );
+		bool	check_existing_channel( std::string name );
+		bool	check_existing_client( std::string name );
 
 		// Command Functions //
-		void			pass_command(int fd, std::vector<std::string> parse_cmd);
-		void			user_command(int fd, std::vector<std::string> parse_cmd);
-		void			nick_command(int fd, std::vector<std::string> parse_cmd);
-		void			join_command(int fd, std::vector<std::string> parse_cmd);
-		void			part_command(int fd, std::vector<std::string> parse_cmd);
-		void			topic_command(int fd, std::vector<std::string> parse_cmd);
-		void			invite_command(int fd, std::vector<std::string> parse_cmd);
-		void			kick_command(int fd, std::vector<std::string> parse_cmd);
-		void			quit_command(int fd, std::vector<std::string> parse_cmd);
-		void			mode_command(int fd, std::vector<std::string> parse_cmd);
-		void			privmsg_command(int fd, std::vector<std::string> parse_cmd);
+
+		void	pass_command( std::vector<std::string> command_parsed, Client *client );
+		void	user_command( std::vector<std::string> command_parsed, Client *client );
+		void	nick_command( std::vector<std::string> command_parsed, Client *client );
+		void	quit_command( std::vector<std::string> command_parsed, Client *client );
+		void	join_command( std::vector<std::string> command_parsed, Client *client );
+		void	part_command( std::vector<std::string> command_parsed, Client *client );
+		void	privmsg_command( std::vector<std::string> command_parsed, Client *client );
+		void	mode_command(std::vector<std::string> command_parsed, Client *client);
+		// void			topic_command(int fd, std::vector<std::string> command_parsed);
+		// void			invite_command(int fd, std::vector<std::string> command_parsed);
+		// void			kick_command(int fd, std::vector<std::string> command_parsed);
+
+		// Check Functions //
+
+		bool is_digits( const std::string &str) { return str.find_first_not_of("0123456789") == std::string::npos; }
+		// Clear Functions //
+
+		void	client_clear( int fd );
+		void	close_socket_fd();
 
 	private :
 
-	// Values //
-		int							_port;
-		int							_socket_fd;
-		std::string					_password;
-		std::vector<Client>			_client_register;
+		static bool		_signal;
+
+		int		_port;
+		int		_socket_fd;
+
+		std::string	_password;
+
+		std::vector<Client>	_client_register;
 		std::vector<struct pollfd>	_pollfd_register;
-		std::vector<std::string>	_cmd;
-		std::vector<std::string>	_list_cmd;
-		static bool					_signal;
-	
-	// Functions //
-		void		set_list_command(void);
+		std::vector<Channel> _channel_register;
+
+		std::vector<std::string>	_command_raw;
 };
