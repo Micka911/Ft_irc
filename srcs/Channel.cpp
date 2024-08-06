@@ -12,11 +12,11 @@ bool	Channel::check_existing_client( int fd ) {
 	return false;
 }
 
-bool	Channel::check_operator( int fd ) {
+bool	Channel::check_operator_status( int fd ) {
 
-	for (size_t i = 0; i < _o_mode.size(); i++) {
+	for (size_t i = 0; i < _operator_register.size(); i++) {
 
-		if (_o_mode[i].get_client_fd() == fd)
+		if (_operator_register[i].get_client_fd() == fd)
 			return true;
 	}
 	return false;
@@ -31,22 +31,14 @@ void	Channel::send_message_to_client( std::string message, Client *client ) {
 	}
 }
 
-void	Channel::set_false_status(){
-	_i_mode = false;
-	_t_mode = false;
-	_k_mode = false;
-	_l_mode = false;
-}
-
-void	Channel::remove_o_mode( Client client ){
+void	Channel::remove_operator_status( Client client ) {
 	
-	for (unsigned long int i = 0; i < _o_mode.size(); i++){
-		if (client.get_client_fd() == _o_mode[i].get_client_fd()){
-			_o_mode.erase(_o_mode.begin()+i);
-		}
+	for (unsigned long int i = 0; i < _operator_register.size(); i++) {
+
+		if (client.get_client_fd() == _operator_register[i].get_client_fd())
+			_operator_register.erase(_operator_register.begin()+i);
 	}
 }
-
 
 // CLEAR FUNCTIONS //
 

@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <string.h>
-#include <cstdlib>
+#include <ctype.h>
 
 #include <vector>
 #include <sys/types.h>
@@ -30,8 +30,10 @@ class Server {
 		int		get_socket_fd() const{ return this->_socket_fd; }
 		int		get_port() const{ return this->_port; }
 		std::string	get_password() const{ return this->_password; }
+		std::string	get_oper_password() const{ return this->_oper_password; }
 		Client		*get_client_by_fd( int fd );
 		Client		*get_client_by_username( std::string username );
+		Client		*get_client_by_nickname( std::string nickname );
 		Channel		*get_channel( std::string name );
 
 		// Setters //
@@ -39,6 +41,7 @@ class Server {
 		void	set_socket_fd( int fd ){ this->_socket_fd = fd; }
 		void	set_port( int port ){ this->_port = port; }
 		void	set_password( std::string password ){ this->_password = password; }
+		void	set_oper_password(){ this->_oper_password = "operator"; }
 
 		// Functions //
 
@@ -49,8 +52,10 @@ class Server {
 		void	socket_creation();
 		void	new_client_request();
 		void	data_receiver( int fd );
-		bool	check_existing_channel( std::string name );
-		bool	check_existing_client( std::string name );
+		bool	check_existing_channel( std::string channel_name );
+		bool	check_existing_client_by_username( std::string username );
+		bool	check_existing_client_by_nickname( std::string nickname );
+		bool	is_digit( const std::string &str){ return str.find_first_not_of("0123456789") == std::string::npos; }
 
 		// Command Functions //
 
@@ -61,14 +66,12 @@ class Server {
 		void	join_command( std::vector<std::string> command_parsed, Client *client );
 		void	part_command( std::vector<std::string> command_parsed, Client *client );
 		void	privmsg_command( std::vector<std::string> command_parsed, Client *client );
-		void	mode_command(std::vector<std::string> command_parsed, Client *client);
-		// void			topic_command(int fd, std::vector<std::string> command_parsed);
-		// void			invite_command(int fd, std::vector<std::string> command_parsed);
-		// void			kick_command(int fd, std::vector<std::string> command_parsed);
+		void	oper_command( std::vector<std::string> command_parsed, Client *client );
+		void	kick_command( std::vector<std::string> command_parsed, Client *client );
+		void	invite_command( std::vector<std::string> command_parsed, Client *client );
+		void	mode_command( std::vector<std::string> command_parsed, Client *client );
+		void	topic_command(std::vector<std::string> command_parsed, Client *client );
 
-		// Check Functions //
-
-		bool is_digits( const std::string &str) { return str.find_first_not_of("0123456789") == std::string::npos; }
 		// Clear Functions //
 
 		void	client_clear( int fd );
@@ -82,6 +85,7 @@ class Server {
 		int		_socket_fd;
 
 		std::string	_password;
+		std::string	_oper_password;
 
 		std::vector<Client>	_client_register;
 		std::vector<struct pollfd>	_pollfd_register;
